@@ -7,15 +7,67 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(janitor)
+library(directlabels)
+library(wesanderson)
+library(directlabels)
+library(alphahull)
+
 ```
 
-#### Example 
+### 1. Patterns in yield over time
+
+##### a. Finalized plot of yield over time
 
 ```{r}
 
-one <- 1
+grain_df <- read_csv("grain_2020.csv")
+
+ggplot(data = grain_df, aes(x = year, y = yield)) +
+  geom_line(aes(color = commodity), size = 1.05) +
+  theme_minimal() +
+  scale_color_manual(values = wes_palette("Darjeeling1")) +
+  labs(title = "Crop yield over time",
+       x = "",
+       y = "Yield (bushels per hectare)",
+       color = "Crop") +
+  facet_wrap(~commodity) +
+  theme(legend.position = "none")
+
+  
+#scale_color_manual(values = c("darkslateblue", "gold", "darkolivegreen3", "gray20"))
+```
+##### b. Crop trends
+
+In this case, it looks like Barley, Corn and Oats are all following the linear lower plateau curve. Sorghum is a little harder to determine because of there isn't as much data, but it looks more like a linear upper plateau or a linear piecewise with a decreasing rate.
+
+
+### 2. Fertilizer Use
+
+##### a. Finalized plot of fertilizer use
+
+```{r}
+
+fertilizer_df <- read_csv("fertilizer_2020.csv")
+
+fert_graph <- ggplot(data = fertilizer_df, aes(x = year, y = kg_h)) + 
+  geom_line(aes(color = fertilizer), size = 1.05) +
+  theme_minimal() +
+  scale_color_manual(values = wes_palette("Darjeeling1")) +
+  labs(title = "Fertilizer use over time",
+       x = "",
+       y = "Fertilizer (kg per hectare)",
+       color = "Fertilizer") +
+  facet_wrap(~crop) 
+  #theme(legend.position = "bottom")
+  
+directlabels::direct.label(fert_graph, "ahull.grid")
 
 ```
- 
-one <- 1
+##### b. Limiting nutrients
 
+In this case, the limiting nutrients are the ones that are the lowest, as they will have been drawn down to the R* of the plant, which is the nutrient the plant needs more of.
+
+Phosphate is limiting for corn,  Nitrogen is limiting for soybeans, and phosphate is limiting for wheat.
