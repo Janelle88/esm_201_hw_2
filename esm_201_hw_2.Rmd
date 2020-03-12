@@ -2,7 +2,9 @@
 title: "ESM 201 HW 2"
 author: "Janelle Christensen"
 date: "3/6/2020"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -14,8 +16,10 @@ library(directlabels)
 library(wesanderson)
 library(directlabels)
 library(alphahull)
+library(stargazer)
 
 ```
+
 
 ### 1. Patterns in yield over time
 
@@ -25,7 +29,7 @@ library(alphahull)
 
 grain_df <- read_csv("grain_2020.csv")
 
-ggplot(data = grain_df, aes(x = year, y = yield)) +
+grain_graph <- ggplot(data = grain_df, aes(x = year, y = yield)) +
   geom_line(aes(color = commodity), size = 1.05) +
   theme_minimal() +
   scale_color_manual(values = wes_palette("Darjeeling1")) +
@@ -34,14 +38,41 @@ ggplot(data = grain_df, aes(x = year, y = yield)) +
        y = "Yield (bushels per hectare)",
        color = "Crop") +
   facet_wrap(~commodity) +
-  theme(legend.position = "none")
+  theme(legend.position = "none") +
+  theme(
+  strip.background = element_blank(),
+  strip.text.x = element_blank()
+)
+
+direct.label(grain_graph, "ahull.grid")
 
   
 #scale_color_manual(values = c("darkslateblue", "gold", "darkolivegreen3", "gray20"))
 ```
+
 ##### b. Crop trends
 
 In this case, it looks like Barley, Corn and Oats are all following the linear lower plateau curve. Sorghum is a little harder to determine because of there isn't as much data, but it looks more like a linear upper plateau or a linear piecewise with a decreasing rate.
+
+##### c. Extra
+
+```{r, results='asis'}
+
+corn_df <- grain_df %>% 
+  filter(commodity %in% c("Corn"))
+
+lm_corn <- lm(yield ~ hectares_planted + hectares_harvested, data = corn_df)
+
+stargazer(lm_corn,
+          column.labels = "Yield",
+          dep.var.labels.include = FALSE,
+          covariate.labels = c("Hectares Planted",
+                               "Hectares Harvested"),
+          type = "latex",
+          out="lm.htm")
+
+```
+
 
 
 ### 2. Fertilizer Use
@@ -66,8 +97,37 @@ fert_graph <- ggplot(data = fertilizer_df, aes(x = year, y = kg_h)) +
 directlabels::direct.label(fert_graph, "ahull.grid")
 
 ```
+
 ##### b. Limiting nutrients
 
-In this case, the limiting nutrients are the ones that are the lowest, as they will have been drawn down to the R* of the plant, which is the nutrient the plant needs more of.
+All three plants use different levels of these nutrients. In terms of application, it looks like both wheat and corn have the most nitrogen applied, whereas soybeans have the most potassium applied. 
 
-Phosphate is limiting for corn,  Nitrogen is limiting for soybeans, and phosphate is limiting for wheat.
+Because the limiting nutrient will be the one that has the highest level of application to the crop to encourage growth, nitrogen is limiting for wheat and corn and potassium is limiting for soybeans.
+
+### 3. Case Study
+
+##### a. Finalized plot of fertilizer vs. yield
+
+```{r}
+
+crop_join_df <- full_join(fertilizer_df, grain_df) %>% 
+  filter(commodity %in% c("Corn"), crop %in% c("Corn"))
+
+
+crop_join_graph <- ggplot(crop_join_df, aes(x = kg_h, y = yield)) +
+  geom_point(aes(color = fertilizer)) +
+  theme_minimal() +
+  scale_color_manual(values = wes_palette("Darjeeling1")) +
+  theme(legend.position = "none") +
+  labs(x = "Fertilizer Application (kg per hectare)",
+       y = "Yield (bushels per hectare)")
+
+directlabels::direct.label(crop_join_graph, "chull.grid")
+
+
+```
+
+##### b. Relationship between fertilizer and yield
+
+There is not a linear relationship between fertilizer and yield. The data shows that as more fertilizer is applied, the yield stays about the same for both potassium and phosphate. Additional fertilizer does not produce more crops for these two nutrients. For nitrogen, the reltionship is mostly the same, but there is a slight change in yield going from about 150 bushels per hectare to about 400 bushels per hectare with an additional 40 kg per hectare of nitrogen applied.
+
